@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghost Party</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            cursor: none;
+            background-color: #1a1a1a;
+        }
+
+        .ghost {
+            position: fixed;
+            width: 80px;
+            height: 100px;
+            background-color: #fff;
+            border-radius: 40px 40px 0 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            clip-path: polygon(
+                0% 100%, 
+                16.67% 90%, 
+                33.33% 100%, 
+                50% 90%, 
+                66.67% 100%, 
+                83.33% 90%, 
+                100% 100%, 
+                100% 0%, 
+                0% 0%
+        );
+    }
+
+        .ghost::before {
+            content: none;
+        }
+
+        .ghost .face {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 30px;
+        }
+
+        .ghost .eye {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #000;
+            border-radius: 50%;
+            top: 0;
+            overflow: hidden;
+        }
+
+        .ghost .eye::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 5px;
+            width: 10px;
+            height: 10px;
+            background-color: #fff;
+            border-radius: 50%;
+        }
+
+        .ghost .eye.left {
+            left: 5px;
+        }
+
+        .ghost .eye.right {
+            right: 5px;
+        }
+
+        .ghost .blush {
+            position: absolute;
+            width: 15px;
+            height: 7px;
+            background-color: #FFB3BA;
+            border-radius: 50%;
+            top: 22px;
+            opacity: 0.6;
+        }
+
+        .ghost .blush.left {
+            left: 5px;
+        }
+
+        .ghost .blush.right {
+            right: 5px;
+        }
+
+        .ghost .mouth {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 10px;
+            border-radius: 50%;
+            border: 3px solid #000;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+        }
+
+        .background-ghost {
+            position: fixed;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="ghost" id="cursor-ghost">
+        <div class="face">
+            <div class="eye left"></div>
+            <div class="eye right"></div>
+            <div class="blush left"></div>
+            <div class="blush right"></div>
+            <div class="mouth"></div>
+        </div>
+    </div>
+
+    <script>
+const cursorGhost = document.getElementById('cursor-ghost');
+let mouseX = 0, mouseY = 0;
+let ghostX = 0, ghostY = 0;
+
+document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+
+function animate() {
+    let dx = mouseX - ghostX;
+    let dy = mouseY - ghostY;
+
+    ghostX += dx * 0.1;
+    ghostY += dy * 0.1;
+
+    cursorGhost.style.left = `${ghostX - 40}px`;
+    cursorGhost.style.top = `${ghostY - 50}px`;
+
+    checkCollisions();
+
+    requestAnimationFrame(animate);
+}
+
+function checkCollisions() {
+    const backgroundGhosts = document.querySelectorAll('.background-ghost');
+    const cursorGhostRect = cursorGhost.getBoundingClientRect();
+
+    backgroundGhosts.forEach(ghost => {
+        const ghostRect = ghost.getBoundingClientRect();
+        if (isColliding(cursorGhostRect, ghostRect)) {
+            popGhost(ghost);
+        }
+    });
+}
+
+function isColliding(rect1, rect2) {
+    return !(rect1.right < rect2.left || 
+             rect1.left > rect2.right || 
+             rect1.bottom < rect2.top || 
+             rect1.top > rect2.bottom);
+}
+
+function popGhost(ghost) {
+    createParticles(ghost);
+    ghost.remove();
+}
+
+function createParticles(ghost) {
+    const ghostRect = ghost.getBoundingClientRect();
+    const centerX = ghostRect.left + ghostRect.width / 2;
+    const centerY = ghostRect.top + ghostRect.height / 2;
+
+    for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.style.position = 'fixed';
+        particle.style.width = '10px';
+        particle.style.height = '10px';
+        particle.style.backgroundColor = ghost.style.backgroundColor;
+        particle.style.borderRadius = '50%';
+        particle.style.left = `${centerX}px`;
+        particle.style.top = `${centerY}px`;
+        particle.style.pointerEvents = 'none';
+        document.body.appendChild(particle);
+
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 3;
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed;
+
+        animateParticle(particle, vx, vy);
+    }
+}
+
+function animateParticle(particle, vx, vy) {
+    let x = parseFloat(particle.style.left);
+    let y = parseFloat(particle.style.top);
+    let opacity = 1;
+
+    function update() {
+        x += vx;
+        y += vy;
+        opacity -= 0.02;
+
+        particle.style.left = `${x}px`;
+        particle.style.top = `${y}px`;
+        particle.style.opacity = opacity;
+
+        if (opacity > 0) {
+            requestAnimationFrame(update);
+        } else {
+            particle.remove();
+        }
+    }
+
+    update();
+}
+
+animate();
+
+        function createBackgroundGhost() {
+            const ghost = document.createElement('div');
+            ghost.classList.add('ghost', 'background-ghost');
+            
+            const face = document.createElement('div');
+            face.classList.add('face');
+            
+            const leftEye = document.createElement('div');
+            leftEye.classList.add('eye', 'left');
+            
+            const rightEye = document.createElement('div');
+            rightEye.classList.add('eye', 'right');
+            
+            const leftBlush = document.createElement('div');
+            leftBlush.classList.add('blush', 'left');
+            
+            const rightBlush = document.createElement('div');
+            rightBlush.classList.add('blush', 'right');
+            
+            const mouth = document.createElement('div');
+            mouth.classList.add('mouth');
+            
+            face.appendChild(leftEye);
+            face.appendChild(rightEye);
+            face.appendChild(leftBlush);
+            face.appendChild(rightBlush);
+            face.appendChild(mouth);
+            ghost.appendChild(face);
+
+            const pastelColours = [
+                '#FFB3BA', '#BAFFC9', '#BAE1FF', '#FFFFBA',
+                '#FFDFBA', '#E0BBE4', '#957DAD', '#D291BC'
+            ];
+            
+            ghost.style.backgroundColor = pastelColours[Math.floor(Math.random() * pastelColours.length)];
+            ghost.style.left = `${Math.random() * window.innerWidth}px`;
+            ghost.style.top = `${Math.random() * window.innerHeight}px`;
+            ghost.style.transform = `scale(${0.5 + Math.random() * 0.5})`;
+
+            document.body.appendChild(ghost);
+
+            setTimeout(() => {
+                ghost.style.opacity = '1';
+            }, 100);
+
+            setTimeout(() => {
+                ghost.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(ghost);
+                }, 2000);
+            }, 5000 + Math.random() * 5000);
+        }
+
+        setInterval(createBackgroundGhost, 1000);
+    </script>
+</body>
+</html>
